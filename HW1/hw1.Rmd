@@ -1,0 +1,114 @@
+---
+title: "Homework 1"
+author: "Mia Guarnieri"
+date: "2023-01-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(deSolve)
+library(ggplot2)
+```
+
+#Part 1
+
+Estimate instantaneous growth rate
+
+```{r cars}
+gs_dat <- data.frame(week = c(0, 6, 9), slime = c(10, 40, 80))
+lm(log(slime) ~ week, data = gs_dat)
+```
+
+Simulate the model
+
+```{r}
+#Define the model as a function
+Exponential <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+dN <- r * N
+list(c(dN))
+})
+}
+
+#Define the state variables, parameters, and times
+
+parameters <- c(r = 0.23)
+state <- c(N = 15) # We specify the initial values here
+times <- 0:2 # Can use seq() to generate non-integer output times
+
+#Run and save the model
+
+exponential_sim <- ode(y = state, times = times, func = Exponential, parms = parameters)
+
+exponential_sim
+```
+
+
+Build a model that includes harvest
+
+```{r}
+#Define the model as a function
+Exponential_harvest <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+if (N > 0) {
+dN <- r * N - h
+} else {
+dN <- 0
+}
+list(c(dN))
+})
+}
+
+#Define the state variables, parameters, and times
+
+parameters <- c(r = 0.23/7, h = 1)
+state <- c(N = 24)
+times <- 0:50 # this is now time in days!
+
+#Run and save the model
+
+exp_harvest_sim <- ode(y = state, times = times, func = Exponential_harvest, parms = parameters)
+
+exp_harvest_sim
+
+#Plot the model
+
+ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_sim)) + 
+  geom_line()
+```
+
+If harvest costs double on weekends:
+
+```{r}
+#Set up the model function
+Exponential_harvest_wknd <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+if (N > 0) {
+if (t %% 7 < 5) {
+dN <- r * N - h
+} else {
+dN <- r * N
+}
+} else {
+dN <- 0
+}
+list(c(dN))
+})
+}
+
+#Run the model
+
+parameters <- c(r = 0.23/7, h = 1)
+state <- c(N = 24)
+times <- 0:50
+exp_harvest_wknd_sim <- ode(y = state, times = times, func = Exponential_harvest_wknd, parms = parameters)
+
+
+#Plot the model
+
+ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_wknd_sim)) + geom_line()
+```
+
+
