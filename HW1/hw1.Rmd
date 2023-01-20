@@ -14,6 +14,8 @@ library(ggplot2)
 
 #Part 1
 
+##Set up functions
+
 Estimate instantaneous growth rate
 
 ```{r cars}
@@ -35,8 +37,8 @@ list(c(dN))
 #Define the state variables, parameters, and times
 
 parameters <- c(r = 0.23)
-state <- c(N = 15) # We specify the initial values here
-times <- 0:2 # Can use seq() to generate non-integer output times
+state <- c(N = 3) # We specify the initial values here
+times <- 0:10 # Can use seq() to generate non-integer output times
 
 #Run and save the model
 
@@ -64,8 +66,8 @@ list(c(dN))
 #Define the state variables, parameters, and times
 
 parameters <- c(r = 0.23/7, h = 1)
-state <- c(N = 24)
-times <- 0:50 # this is now time in days!
+state <- c(N = 15)
+times <- 0:20 # this is now time in days!
 
 #Run and save the model
 
@@ -100,9 +102,7 @@ list(c(dN))
 
 #Run the model
 
-parameters <- c(r = 0.23/7, h = 1)
-state <- c(N = 24)
-times <- 0:50
+times <- 0:40
 exp_harvest_wknd_sim <- ode(y = state, times = times, func = Exponential_harvest_wknd, parms = parameters)
 
 
@@ -111,4 +111,352 @@ exp_harvest_wknd_sim <- ode(y = state, times = times, func = Exponential_harvest
 ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_wknd_sim)) + geom_line()
 ```
 
+##Scenario 1: We request the full amount of funding up front
 
+It will take 9 weeks from the day you are submitting the proposal until the day that the contractor would begin to clear the slime.
+
+```{r}
+#Exponential model function
+Exponential <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+dN <- r * N
+list(c(dN))
+})
+}
+
+#Define the state variables, parameters, and times
+
+parameters <- c(r = 0.23)
+state <- c(N = 3) # We specify the initial values here
+times <- 0:9 #9 weeks
+
+#Run and save the exponential
+
+exponential_sim_s1 <- ode(y = state, times = times, func = Exponential, parms = parameters)
+
+starting_area_s1 <- as.numeric(exponential_sim_s1[10,2])
+
+#Growth with harvest, harvest would start after week 9 - this is if the contractor works weekends
+
+Exponential_harvest <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+if (N > 0) {
+dN <- r * N - h
+} else {
+dN <- 0
+}
+list(c(dN))
+})
+}
+
+#Define the state variables, parameters, and times
+
+parameters <- c(r = 0.23/7, h = 1)
+state <- c(N = starting_area)
+times <- 0:50 # this is now time in days!
+
+#Run and save the model
+
+exp_harvest_sim_s1 <- ode(y = state, times = times, func = Exponential_harvest, parms = parameters)
+
+exp_harvest_sim_s1
+
+ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_sim_s1)) + geom_line()
+
+
+#Growth with harvest, harvest would start after week 9 - this is if the contractor does not work weekends
+
+Exponential_harvest_wknd <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+if (N > 0) {
+if (t %% 7 < 5) {
+dN <- r * N - h
+} else {
+dN <- r * N
+}
+} else {
+dN <- 0
+}
+list(c(dN))
+})
+}
+
+#Run the model
+
+parameters <- c(r = 0.23/7, h = 1)
+state <- c(N = starting_area)
+times <- 0:50 # this is now time in days!
+
+exp_harvest_wknd_sim_s1 <- ode(y = state, times = times, func = Exponential_harvest_wknd, parms = parameters)
+
+exp_harvest_wknd_sim_s1
+
+#Plot the model
+
+ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_wknd_sim_s1)) + geom_line()
+
+```
+
+Results: It takes 46 days to clear the slime if the contractor works weekends, and isn't possible to clear if they don't work weekends. This is about 6.5 weeks, so 12 weekend days and 34 weekdays. The total cost would be $58,000.
+
+##Scenario 2: We request up to or less than $10,000 initially, to start removal right away.
+
+It would take 2 weeks to obtain up to $10,000
+
+```{r}
+#Exponential model function
+Exponential <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+dN <- r * N
+list(c(dN))
+})
+}
+
+#Define the state variables, parameters, and times
+
+parameters <- c(r = 0.23)
+state <- c(N = 3) # We specify the initial values here
+times <- 0:2 #2 weeks
+
+#Run and save the exponential
+
+exponential_sim_s2 <- ode(y = state, times = times, func = Exponential, parms = parameters)
+
+starting_area_s2 <- as.numeric(exponential_sim_s2[3,2])
+
+#Growth with harvest, harvest would start after week 2 - this is if the contractor works weekends
+
+Exponential_harvest <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+if (N > 0) {
+dN <- r * N - h
+} else {
+dN <- 0
+}
+list(c(dN))
+})
+}
+
+#Define the state variables, parameters, and times
+
+parameters <- c(r = 0.23/7, h = 1)
+state <- c(N = starting_area_s2)
+times <- 0:50 # this is now time in days!
+
+#Run and save the model
+
+exp_harvest_sim_s2 <- ode(y = state, times = times, func = Exponential_harvest, parms = parameters)
+
+exp_harvest_sim_s2
+
+ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_sim_s2)) + geom_line()
+
+
+#Growth with harvest, harvest would start after week 9 - this is if the contractor does not work weekends
+
+Exponential_harvest_wknd <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+if (N > 0) {
+if (t %% 7 < 5) {
+dN <- r * N - h
+} else {
+dN <- r * N
+}
+} else {
+dN <- 0
+}
+list(c(dN))
+})
+}
+
+#Run the model
+
+parameters <- c(r = 0.23/7, h = 1)
+state <- c(N = starting_area_s2)
+times <- 0:50 # this is now time in days!
+
+exp_harvest_wknd_sim_s2 <- ode(y = state, times = times, func = Exponential_harvest_wknd, parms = parameters)
+
+exp_harvest_wknd_sim_s2
+
+#Plot the model
+
+ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_wknd_sim_s2)) + geom_line()
+```
+
+If clearing was started immediately after the council meeting, 2 weeks away, it could be completed in 5 days, leaving an extra $5,000 in the budget. This means we could 
+
+##Scenario 3: Scenario 2 with a 1 week delay
+
+Exploring how many days it would take if the contractor could not begin clearing until week 3
+
+```{r}
+#Exponential model function
+Exponential <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+dN <- r * N
+list(c(dN))
+})
+}
+
+#Define the state variables, parameters, and times
+
+parameters <- c(r = 0.23)
+state <- c(N = 3) # We specify the initial values here
+times <- 0:3 #3 weeks
+
+#Run and save the exponential
+
+exponential_sim_s3 <- ode(y = state, times = times, func = Exponential, parms = parameters)
+
+starting_area_s3 <- as.numeric(exponential_sim_s3[4,2])
+
+#Growth with harvest, harvest would start after week 2 - this is if the contractor works weekends
+
+Exponential_harvest <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+if (N > 0) {
+dN <- r * N - h
+} else {
+dN <- 0
+}
+list(c(dN))
+})
+}
+
+#Define the state variables, parameters, and times
+
+parameters <- c(r = 0.23/7, h = 1)
+state <- c(N = starting_area_s3)
+times <- 0:50 # this is now time in days!
+
+#Run and save the model
+
+exp_harvest_sim_s3 <- ode(y = state, times = times, func = Exponential_harvest, parms = parameters)
+
+exp_harvest_sim_s3
+
+ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_sim_s3)) + geom_line()
+
+
+#Growth with harvest, harvest would start after week 9 - this is if the contractor does not work weekends
+
+Exponential_harvest_wknd <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+if (N > 0) {
+if (t %% 7 < 5) {
+dN <- r * N - h
+} else {
+dN <- r * N
+}
+} else {
+dN <- 0
+}
+list(c(dN))
+})
+}
+
+#Run the model
+
+parameters <- c(r = 0.23/7, h = 1)
+state <- c(N = starting_area_s3)
+times <- 0:50 # this is now time in days!
+
+exp_harvest_wknd_sim_s3 <- ode(y = state, times = times, func = Exponential_harvest_wknd, parms = parameters)
+
+exp_harvest_wknd_sim_s3
+
+#Plot the model
+
+ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_wknd_sim_s3)) + geom_line()
+```
+
+The slime could be cleared in 6 days, so we would need to request $6,000 from the committee.
+
+
+##Scenario 4: Scenario 2 with a 2 week delay
+
+Exploring how many days it would take if the contractor could not begin clearing until week 4
+
+```{r}
+#Exponential model function
+Exponential <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+dN <- r * N
+list(c(dN))
+})
+}
+
+#Define the state variables, parameters, and times
+
+parameters <- c(r = 0.23)
+state <- c(N = 3) # We specify the initial values here
+times <- 0:4 #4 weeks
+
+#Run and save the exponential
+
+exponential_sim_s4 <- ode(y = state, times = times, func = Exponential, parms = parameters)
+
+starting_area_s4 <- as.numeric(exponential_sim_s4[5,2])
+
+#Growth with harvest, harvest would start after week 2 - this is if the contractor works weekends
+
+Exponential_harvest <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+if (N > 0) {
+dN <- r * N - h
+} else {
+dN <- 0
+}
+list(c(dN))
+})
+}
+
+#Define the state variables, parameters, and times
+
+parameters <- c(r = 0.23/7, h = 1)
+state <- c(N = starting_area_s4)
+times <- 0:50 # this is now time in days!
+
+#Run and save the model
+
+exp_harvest_sim_s4 <- ode(y = state, times = times, func = Exponential_harvest, parms = parameters)
+
+exp_harvest_sim_s4
+
+ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_sim_s4)) + geom_line()
+
+
+#Growth with harvest, harvest would start after week 9 - this is if the contractor does not work weekends
+
+Exponential_harvest_wknd <- function(t, state, parameters) {
+with(as.list(c(state, parameters)), {
+if (N > 0) {
+if (t %% 7 < 5) {
+dN <- r * N - h
+} else {
+dN <- r * N
+}
+} else {
+dN <- 0
+}
+list(c(dN))
+})
+}
+
+#Run the model
+
+parameters <- c(r = 0.23/7, h = 1)
+state <- c(N = starting_area_s4)
+times <- 0:50 # this is now time in days!
+
+exp_harvest_wknd_sim_s4 <- ode(y = state, times = times, func = Exponential_harvest_wknd, parms = parameters)
+
+exp_harvest_wknd_sim_s4
+
+#Plot the model
+
+ggplot(aes(x = time, y = N), data = as.data.frame(exp_harvest_wknd_sim_s4)) + geom_line()
+```
+
+With a two week delay, the slime could be cleared in 8 days if the contractor works weekends, which would cost $10000.If the contractor does not work weekends, then it would take 10 days, with a cost of 10,000 dollars.
